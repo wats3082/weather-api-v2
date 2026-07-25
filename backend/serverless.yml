@@ -1,0 +1,50 @@
+service: weather-api-v2
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-east-1
+  environment:
+    OPENWEATHER_API_KEY: ${env:OPENWEATHER_API_KEY}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:Query
+        - dynamodb:Scan
+      Resource: arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/weather-cache
+
+functions:
+  turbulencePredict:
+    handler: dist/handlers/turbulence.predict
+    events:
+      - http:
+          path: api/turbulence/predict
+          method: post
+          cors: true
+
+  weatherCurrent:
+    handler: dist/handlers/weather.getCurrent
+    events:
+      - http:
+          path: api/weather/{city}
+          method: get
+          cors: true
+
+  weatherForecast:
+    handler: dist/handlers/weather.getForecast
+    events:
+      - http:
+          path: api/forecast/{city}
+          method: get
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                days: false
+
+plugins:
+  - serverless-offline

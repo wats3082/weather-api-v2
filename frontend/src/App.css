@@ -27,7 +27,7 @@
   padding: clamp(14px, 2.6vw, 28px);
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
   color: var(--text);
 }
 
@@ -127,10 +127,15 @@ h1 {
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 16px 40px rgba(2, 8, 20, 0.3);
+  backdrop-filter: blur(3px);
 }
 
 .page {
   padding: clamp(18px, 3vw, 28px);
+}
+
+.page > * + * {
+  margin-top: 14px;
 }
 
 .page-header {
@@ -178,7 +183,7 @@ h2 {
   border: 1px solid var(--border);
   background: rgba(6, 27, 44, 0.6);
   border-radius: 12px;
-  padding: 14px;
+  padding: 15px;
 }
 
 .card h3,
@@ -194,6 +199,7 @@ h2 {
   margin: 0 0 8px;
   color: var(--muted);
   font-size: 0.88rem;
+  line-height: 1.45;
 }
 
 .metric strong {
@@ -232,7 +238,7 @@ code {
 .turbulence-form {
   display: grid;
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .inline-form {
@@ -264,6 +270,7 @@ input[type='text'],
   background: rgba(255, 255, 255, 0.03);
   color: var(--text);
   padding: 10px 12px;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
 }
 
 input::placeholder {
@@ -276,8 +283,26 @@ button:focus-visible {
   outline-offset: 1px;
 }
 
+input[type='text']:focus-visible,
+.route-input:focus-visible {
+  border-color: rgba(125, 211, 252, 0.72);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.16);
+  background: rgba(255, 255, 255, 0.055);
+}
+
 input[type='range'] {
   accent-color: var(--accent);
+}
+
+.city-search-input {
+  padding-left: 36px;
+  background-image: radial-gradient(circle at 11px 50%, rgba(103, 232, 249, 0.85) 0 2px, transparent 3px),
+    radial-gradient(circle at 14px 50%, rgba(103, 232, 249, 0.22) 0 7px, transparent 8px);
+  background-repeat: no-repeat;
+}
+
+.altitude-slider {
+  margin-top: 2px;
 }
 
 button {
@@ -289,6 +314,11 @@ button {
   cursor: pointer;
   font-weight: 600;
   transition: transform 140ms ease, filter 140ms ease, border-color 140ms ease;
+}
+
+.primary-btn {
+  min-width: 138px;
+  box-shadow: inset 0 1px 0 rgba(224, 248, 255, 0.24), 0 8px 16px rgba(8, 40, 62, 0.36);
 }
 
 button:hover:not(:disabled) {
@@ -303,10 +333,10 @@ button:disabled {
 }
 
 .forecast-list {
-  margin-top: 12px;
+  margin-top: 6px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .forecast-item p,
@@ -366,7 +396,8 @@ button:disabled {
 }
 
 .map-card {
-  margin: 14px 0;
+  margin: 16px 0;
+  background: linear-gradient(160deg, rgba(8, 31, 51, 0.76), rgba(4, 22, 38, 0.82));
 }
 
 .route-map {
@@ -471,5 +502,9 @@ button:disabled {
 
   .nav-btn {
     flex: 1 1 100%;
+  }
+
+  .primary-btn {
+    width: 100%;
   }
 }

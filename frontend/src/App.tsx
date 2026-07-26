@@ -292,12 +292,13 @@ export default function App() {
               {weatherDemoMode && <p className="banner">Demo mode is active for weather data.</p>}
               <form className="inline-form" onSubmit={handleCityWeatherSearch}>
                 <input
+                  className="city-search-input"
                   type="text"
                   value={cityInput}
                   onChange={(event) => setCityInput(event.target.value)}
                   placeholder="Enter city name"
                 />
-                <button type="submit" disabled={weatherLoading}>
+                <button className="primary-btn" type="submit" disabled={weatherLoading}>
                   {weatherLoading ? 'Checking...' : 'Get Weather'}
                 </button>
               </form>
@@ -341,15 +342,16 @@ export default function App() {
               <form className="turbulence-form" onSubmit={handleRouteSubmit}>
                 <label>
                   From
-                  <input value={from} onChange={(event) => setFrom(event.target.value)} />
+                  <input className="route-input" value={from} onChange={(event) => setFrom(event.target.value)} />
                 </label>
                 <label>
                   To
-                  <input value={to} onChange={(event) => setTo(event.target.value)} />
+                  <input className="route-input" value={to} onChange={(event) => setTo(event.target.value)} />
                 </label>
                 <label>
                   Altitude: {altitude.toLocaleString()} ft
                   <input
+                    className="altitude-slider"
                     type="range"
                     min="10000"
                     max="43000"
@@ -358,7 +360,7 @@ export default function App() {
                     onChange={(event) => setAltitude(Number(event.target.value))}
                   />
                 </label>
-                <button type="submit" disabled={routeLoading}>
+                <button className="primary-btn" type="submit" disabled={routeLoading}>
                   {routeLoading ? 'Analyzing...' : 'Analyze Route'}
                 </button>
               </form>

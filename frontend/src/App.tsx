@@ -60,6 +60,92 @@ interface TurbulenceResponse {
 
 const apiBase = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 const apiUrl = (path: string) => (apiBase ? `${apiBase}${path}` : path)
+const mockConditions = ['Clear', 'Clouds', 'Rain', 'Mist']
+const mockRisks = ['LOW', 'MEDIUM', 'HIGH', 'SEVERE'] as const
+
+function hashSeed(input: string): number {
+  return input.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)
+}
+
+function mockCityWeather(city: string): CityWeather {
+  const seed = hashSeed(city.toLowerCase())
+  return {
+    city,
+    temperature: 58 + (seed % 35),
+    condition: mockConditions[seed % mockConditions.length],
+    humidity: 35 + (seed % 55),
+    windSpeed: 6 + (seed % 24),
+    pressure: 995 + (seed % 25),
+    visibility: 6 + (seed % 8),
+    cloudCover: seed % 100,
+  }
+}
+
+function mockForecast(city: string): ForecastResponse {
+  const base = hashSeed(city.toLowerCase())
+  const now = Date.now()
+  return {
+    city,
+    days: 1,
+    forecast: Array.from({ length: 8 }, (_, idx) => ({
+      time: new Date(now + idx * 3 * 60 * 60 * 1000).toISOString(),
+      temperature: 56 + ((base + idx * 3) % 34),
+      condition: mockConditions[(base + idx) % mockConditions.length],
+      humidity: 40 + ((base + idx * 5) % 50),
+      windSpeed: 8 + ((base + idx * 2) % 22),
+      cloudCover: (base + idx * 11) % 100,
+    })),
+  }
+}
+
+function mockRouteData(from: string, to: string, altitude: number): TurbulenceResponse {
+  const base = hashSeed(`${from}-${to}-${altitude}`)
+  const turbulenceScore = Number(((base % 90) / 10 + 1).toFixed(1))
+  const overallRisk = mockRisks[Math.min(3, Math.floor(turbulenceScore / 2.6))]
+  const waypoints: Waypoint[] = [
+    from,
+    `${from} waypoint`,
+    `${to} waypoint`,
+    to,
+  ].map((city, idx) => {
+    const w = mockCityWeather(city)
+    const risk = mockRisks[Math.min(3, Math.floor((turbulenceScore + idx) / 3))]
+    return {
+      city,
+      weather: {
+        temp: Math.round(w.temperature),
+        condition: w.condition,
+        windSpeed: Math.round(w.windSpeed),
+      },
+      turbulence: {
+        level: risk,
+      },
+    }
+  })
+
+  return {
+    from,
+    to,
+    altitude,
+    distance: 420 + (base % 2200),
+    flightTime: ((420 + (base % 2200)) / 450).toFixed(1),
+    maxWindSpeed: Math.max(...waypoints.map((wp) => wp.weather.windSpeed)),
+    overallRisk,
+    turbulenceScore,
+    recommendation:
+      overallRisk === 'SEVERE'
+        ? 'Demo projection suggests severe turbulence. Consider delay or reroute.'
+        : overallRisk === 'HIGH'
+          ? 'Demo projection suggests elevated turbulence. Review route alternatives.'
+          : 'Demo projection suggests manageable route conditions.',
+    riskFactors: [
+      'Jet stream crosswind zone',
+      'Vertical wind shear at cruise altitude',
+      'Localized convective weather cells',
+    ],
+    waypoints,
+  }
+}
 
 function App() {
   const [mode, setMode] = useState<AppMode>('local-weather')
@@ -72,6 +158,8 @@ function App() {
   const [forecast, setForecast] = useState<ForecastResponse | null>(null)
   const [weatherLoading, setWeatherLoading] = useState(false)
   const [weatherError, setWeatherError] = useState<string | null>(null)
+  const [weatherDemoMode, setWeatherDemoMode] = useState(false)
+  const [routeDemoMode, setRouteDemoMode] = useState(false)
 
   const handleRouteSubmit = async (from: string, to: string, altitude: number) => {
     setLoading(true)
@@ -94,8 +182,11 @@ function App() {
 
       const data = await response.json()
       setRouteData(data)
+      setRouteDemoMode(false)
     } catch (error) {
-      setRouteError((error as Error).message)
+      setRouteData(mockRouteData(from, to, altitude))
+      setRouteDemoMode(true)
+      setRouteError(`Live API unavailable. Showing demo route data (${(error as Error).message}).`)
     } finally {
       setLoading(false)
     }
@@ -127,10 +218,12 @@ function App() {
       const forecastData: ForecastResponse = await forecastRes.json()
       setCityWeather(weatherData)
       setForecast(forecastData)
+      setWeatherDemoMode(false)
     } catch (error) {
-      setWeatherError((error as Error).message)
-      setCityWeather(null)
-      setForecast(null)
+      setCityWeather(mockCityWeather(city))
+      setForecast(mockForecast(city))
+      setWeatherDemoMode(true)
+      setWeatherError(`Live API unavailable. Showing demo weather data (${(error as Error).message}).`)
     } finally {
       setWeatherLoading(false)
     }
@@ -171,6 +264,9 @@ function App() {
               Restored v1 local weather flow. Enter any city to view current conditions and
               short-term forecast.
             </p>
+            {weatherDemoMode && (
+              <p className="demo-banner">Demo mode: sample weather data is currently being shown.</p>
+            )}
 
             <form className="weather-search-form" onSubmit={handleCityWeatherSearch}>
               <input
@@ -242,6 +338,9 @@ function App() {
             <p className="muted">
               Keep v2 simulation while preserving local weather in the other tab.
             </p>
+            {routeDemoMode && (
+              <p className="demo-banner">Demo mode: sample turbulence route data is currently being shown.</p>
+            )}
 
             <div className="route-layout">
               <div>

@@ -7,6 +7,9 @@
   --amber: #f59e0b;
   --amber-dim: rgba(245, 158, 11, 0.15);
   --amber-border: rgba(245, 158, 11, 0.35);
+  --green: #22c55e;
+  --yellow: #eab308;
+  --red: #ef4444;
 }
 
 * { box-sizing: border-box; }
@@ -42,7 +45,7 @@ h1 { margin: 0; font-size: clamp(1.15rem, 2vw, 1.55rem); }
 
 .body {
   display: grid;
-  grid-template-columns: 180px 1fr;
+  grid-template-columns: 190px 1fr;
   gap: 16px;
   flex: 1;
 }
@@ -102,21 +105,43 @@ h1 { margin: 0; font-size: clamp(1.15rem, 2vw, 1.55rem); }
 h2 { margin: 0 0 10px; }
 .lead { margin: 0 0 18px; color: var(--muted); max-width: 72ch; }
 
-.card-grid {
+.card-grid,
+.metric-grid,
+.waypoint-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
-.card, .list-card {
+.metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.card,
+.list-card,
+.metric,
+.forecast-item,
+.map-card {
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.03);
   border-radius: 12px;
   padding: 14px;
 }
 
-.card h3 { margin: 0 0 6px; color: var(--amber); font-size: 0.95rem; }
-.card p, .list-card p { margin: 0 0 8px; color: var(--muted); font-size: 0.88rem; }
+.card h3,
+.list-card h3 {
+  margin: 0 0 6px;
+  color: var(--amber);
+  font-size: 0.95rem;
+}
+
+.card p,
+.list-card p,
+.metric p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.metric strong { font-size: 1.05rem; }
 
 code {
   display: block;
@@ -128,8 +153,180 @@ code {
   background: var(--amber-dim);
 }
 
+.banner {
+  border: 1px solid var(--amber-border);
+  background: var(--amber-dim);
+  color: var(--amber);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  margin: 0 0 12px;
+}
+
+.error-text {
+  color: #fca5a5;
+  font-size: 0.85rem;
+  margin: 10px 0;
+}
+
+.inline-form,
+.turbulence-form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.inline-form {
+  grid-template-columns: 1fr auto;
+}
+
+.turbulence-form {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: end;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+input,
+button {
+  font: inherit;
+}
+
+input[type='text'],
+.turbulence-form input {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 10px 12px;
+}
+
+input[type='range'] {
+  accent-color: var(--amber);
+}
+
+button {
+  border: 1px solid var(--amber-border);
+  border-radius: 10px;
+  background: var(--amber-dim);
+  color: var(--amber);
+  padding: 10px 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.forecast-list {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.forecast-item p,
+.forecast-item span,
+.forecast-item strong {
+  display: block;
+}
+
+.risk-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.risk-pill {
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.risk-pill.low { background: rgba(34, 197, 94, 0.2); color: #86efac; }
+.risk-pill.medium { background: rgba(234, 179, 8, 0.2); color: #fde047; }
+.risk-pill.high { background: rgba(249, 115, 22, 0.2); color: #fdba74; }
+.risk-pill.severe { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+
+.map-card { margin: 14px 0; }
+
+.route-map {
+  width: 100%;
+  height: auto;
+}
+
+.route-map rect {
+  fill: #0d1225;
+  stroke: var(--border);
+}
+
+.route-segment {
+  stroke-width: 8;
+  fill: none;
+  stroke-linecap: round;
+}
+
+.route-segment.green { stroke: var(--green); }
+.route-segment.yellow { stroke: var(--yellow); }
+.route-segment.red { stroke: var(--red); }
+
+.route-node.start,
+.route-node.end {
+  fill: var(--amber);
+}
+
+.route-node.mid {
+  fill: #93c5fd;
+}
+
+.route-map text {
+  fill: #cbd5e1;
+  font-size: 12px;
+}
+
+.map-legend {
+  margin-top: 8px;
+  display: flex;
+  gap: 14px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.dot.green { background: var(--green); }
+.dot.yellow { background: var(--yellow); }
+.dot.red { background: var(--red); }
+
+@media (max-width: 980px) {
+  .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .turbulence-form { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 780px) {
   .body { grid-template-columns: 1fr; }
   .sidebar { flex-direction: row; flex-wrap: wrap; }
-  .card-grid { grid-template-columns: 1fr; }
+  .card-grid,
+  .metric-grid,
+  .waypoint-grid,
+  .forecast-list,
+  .inline-form {
+    grid-template-columns: 1fr;
+  }
 }

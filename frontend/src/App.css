@@ -49,7 +49,7 @@
   color: var(--accent-strong);
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
 }
 
@@ -62,7 +62,7 @@ h1 {
 .tagline {
   margin: 10px 0 0;
   color: var(--muted);
-  font-size: 0.93rem;
+  font-size: 0.9rem;
   max-width: 75ch;
 }
 
@@ -152,12 +152,12 @@ h2 {
   margin: 8px 0 0;
   color: var(--muted);
   max-width: 72ch;
-  font-size: 0.91rem;
+  font-size: 0.88rem;
 }
 
 .section-heading {
   margin: 18px 0 10px;
-  font-size: 0.92rem;
+  font-size: 0.86rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--accent);
@@ -190,7 +190,7 @@ h2 {
 .list-card h3 {
   margin: 0 0 8px;
   color: var(--accent-strong);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
 
 .card p,
@@ -198,12 +198,12 @@ h2 {
 .metric p {
   margin: 0 0 8px;
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   line-height: 1.45;
 }
 
 .metric strong {
-  font-size: 1.08rem;
+  font-size: 1.02rem;
 }
 
 code {
@@ -224,13 +224,13 @@ code {
   color: #bff4ff;
   border-radius: 10px;
   padding: 10px 12px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   margin: 0 0 14px;
 }
 
 .error-text {
   color: #fecaca;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   margin: 12px 0;
 }
 
@@ -255,7 +255,7 @@ label {
   flex-direction: column;
   gap: 6px;
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
 }
 
 input,
@@ -360,7 +360,7 @@ button:disabled {
   border-radius: 999px;
   padding: 6px 12px;
   font-weight: 700;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   letter-spacing: 0.03em;
 }
 
@@ -388,7 +388,7 @@ button:disabled {
   margin: 0 0 8px;
   padding-left: 18px;
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: 0.84rem;
 }
 
 .risk-list li + li {
@@ -447,7 +447,7 @@ button:disabled {
   display: flex;
   gap: 14px;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.76rem;
 }
 
 .dot {
@@ -516,12 +516,12 @@ button:disabled {
   }
 
   h1 {
-    font-size: clamp(1.2rem, 2vw, 1.65rem);
+    font-size: clamp(1.12rem, 1.85vw, 1.48rem);
   }
 
   .tagline {
     margin-top: 6px;
-    font-size: 0.86rem;
+    font-size: 0.8rem;
   }
 
   .body {
@@ -557,11 +557,12 @@ button:disabled {
 
   .lead {
     margin-top: 6px;
-    font-size: 0.86rem;
+    font-size: 0.8rem;
   }
 
   .section-heading {
     margin: 12px 0 8px;
+    font-size: 0.8rem;
   }
 
   .inline-form,
@@ -582,6 +583,32 @@ button:disabled {
   .forecast-item,
   .map-card {
     padding: 12px;
+  }
+
+  .card h3,
+  .list-card h3 {
+    font-size: 0.88rem;
+  }
+
+  .card p,
+  .list-card p,
+  .metric p,
+  .risk-list {
+    font-size: 0.79rem;
+  }
+
+  .metric strong {
+    font-size: 0.94rem;
+  }
+
+  label,
+  .map-legend {
+    font-size: 0.74rem;
+  }
+
+  .risk-pill {
+    font-size: 0.7rem;
+    padding: 5px 10px;
   }
 
   .map-card {

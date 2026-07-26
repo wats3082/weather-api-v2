@@ -58,7 +58,7 @@ interface TurbulenceResponse {
 const NAV: { id: Page; label: string }[] = [
   { id: 'local-weather', label: 'Local Weather' },
   { id: 'turbulence', label: 'Turbulence Simulator' },
-  { id: 'api-status', label: 'Enter Flight Number' },
+  { id: 'api-status', label: 'Enter route number to track weather and turbulence' },
 ];
 
 const BASE_API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
@@ -410,7 +410,7 @@ export default function App() {
           {active === 'api-status' && (
             <section className="page">
               <div className="page-header">
-                <h2>Enter Flight Number</h2>
+                <h2>Enter route number to track weather and turbulence</h2>
                 <p className="lead">Current API endpoint configuration and fallback behavior.</p>
               </div>
               <div className="list-card">

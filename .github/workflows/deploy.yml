@@ -3,8 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build-frontend:
@@ -24,7 +23,7 @@ jobs:
           npm install --prefix frontend
 
       - name: Build frontend
-        run: npm run build --prefix frontend
+        run: npm run build:pages --prefix frontend
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://weather-api-v2.onrender.com' }}
 
@@ -34,29 +33,3 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./frontend/dist
-
-  build-backend:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install dependencies
-        run: npm install --prefix backend
-
-      - name: Build backend
-        run: npm run build --prefix backend
-
-      - name: Run tests (if available)
-        run: npm test --prefix backend --if-present || true
-
-      - name: Notify deployment ready
-        run: |
-          echo "Backend is ready for deployment to AWS Lambda"
-          echo "Run: npm run backend:deploy"

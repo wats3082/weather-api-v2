@@ -492,6 +492,13 @@ button:disabled {
 }
 
 @media (min-width: 1024px) and (min-height: 700px) {
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
   .shell {
     height: 100vh;
     max-height: 100vh;

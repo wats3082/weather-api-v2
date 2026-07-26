@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './App.css';
 
-type Page = 'summary' | 'local-weather' | 'turbulence' | 'api-status';
+type Page = 'local-weather' | 'turbulence' | 'api-status';
 
 interface CityWeather {
   city: string;
@@ -56,8 +56,7 @@ interface TurbulenceResponse {
 }
 
 const NAV: { id: Page; label: string }[] = [
-  { id: 'summary', label: 'Summary' },
-  { id: 'local-weather', label: 'Local Weather v1' },
+  { id: 'local-weather', label: 'Local Weather' },
   { id: 'turbulence', label: 'Turbulence Simulator' },
   { id: 'api-status', label: 'API Status' },
 ];
@@ -178,7 +177,7 @@ function SimulatedRouteMap({ from, to }: { from: string; to: string }) {
 }
 
 export default function App() {
-  const [active, setActive] = useState<Page>('summary');
+  const [active, setActive] = useState<Page>('local-weather');
 
   const [from, setFrom] = useState('Los Angeles');
   const [to, setTo] = useState('New York');
@@ -284,21 +283,6 @@ export default function App() {
         </aside>
 
         <main className="content">
-          {active === 'summary' && (
-            <section className="page">
-              <h2>Product Summary</h2>
-              <p className="lead">
-                Weather v1 city lookup and forecast are restored, plus the turbulence simulator with dummy fallback data.
-              </p>
-              <div className="card-grid">
-                <article className="card"><h3>City Weather v1</h3><p>Lookup city conditions with forecast timeline.</p></article>
-                <article className="card"><h3>Turbulence Simulator</h3><p>Route scoring with risk factors and recommendations.</p></article>
-                <article className="card"><h3>Dummy Data Mode</h3><p>Automatic fallback when API endpoints are offline.</p></article>
-                <article className="card"><h3>Simulated Map</h3><p>Route segments highlighted green, yellow, and red.</p></article>
-              </div>
-            </section>
-          )}
-
           {active === 'local-weather' && (
             <section className="page">
               <h2>Local Weather v1</h2>

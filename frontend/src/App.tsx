@@ -285,7 +285,10 @@ export default function App() {
         <main className="content">
           {active === 'local-weather' && (
             <section className="page">
-              <h2>Local Weather v1</h2>
+              <div className="page-header">
+                <h2>Local Weather</h2>
+                <p className="lead">Search a city to view current conditions and short-range forecast data.</p>
+              </div>
               {weatherDemoMode && <p className="banner">Demo mode is active for weather data.</p>}
               <form className="inline-form" onSubmit={handleCityWeatherSearch}>
                 <input
@@ -312,22 +315,28 @@ export default function App() {
               )}
 
               {forecast?.forecast?.length ? (
-                <div className="forecast-list">
-                  {forecast.forecast.slice(0, 6).map((item) => (
-                    <div key={item.time} className="forecast-item">
-                      <p>{new Date(item.time).toLocaleTimeString()}</p>
-                      <strong>{Math.round(item.temperature)}°F</strong>
-                      <span>{item.condition}</span>
-                    </div>
-                  ))}
-                </div>
+                <>
+                  <h3 className="section-heading">6-Hour Outlook</h3>
+                  <div className="forecast-list">
+                    {forecast.forecast.slice(0, 6).map((item) => (
+                      <div key={item.time} className="forecast-item">
+                        <p>{new Date(item.time).toLocaleTimeString()}</p>
+                        <strong>{Math.round(item.temperature)}°F</strong>
+                        <span>{item.condition}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : null}
             </section>
           )}
 
           {active === 'turbulence' && (
             <section className="page">
-              <h2>Turbulence Simulator</h2>
+              <div className="page-header">
+                <h2>Turbulence Simulator</h2>
+                <p className="lead">Compare route conditions and projected turbulence for a sample flight path.</p>
+              </div>
               {routeDemoMode && <p className="banner">Demo mode is active for turbulence data.</p>}
               <form className="turbulence-form" onSubmit={handleRouteSubmit}>
                 <label>
@@ -384,9 +393,11 @@ export default function App() {
 
                   <div className="list-card">
                     <h3>Risk Factors</h3>
-                    {routeData.riskFactors.map((factor) => (
-                      <p key={factor}>• {factor}</p>
-                    ))}
+                    <ul className="risk-list">
+                      {routeData.riskFactors.map((factor) => (
+                        <li key={factor}>{factor}</li>
+                      ))}
+                    </ul>
                     <p><strong>Recommendation:</strong> {routeData.recommendation}</p>
                   </div>
                 </>
@@ -396,7 +407,10 @@ export default function App() {
 
           {active === 'api-status' && (
             <section className="page">
-              <h2>API Status</h2>
+              <div className="page-header">
+                <h2>API Status</h2>
+                <p className="lead">Current API endpoint configuration and fallback behavior.</p>
+              </div>
               <div className="list-card">
                 <p>Configured API base URL</p>
                 <code>{BASE_API || 'relative path (local proxy mode)'}</code>

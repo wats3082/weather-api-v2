@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './App.css';
 
-type Page = 'local-weather' | 'turbulence' | 'api-status';
+type Page = 'local-weather' | 'turbulence';
 
 interface CityWeather {
   city: string;
@@ -58,7 +58,6 @@ interface TurbulenceResponse {
 const NAV: { id: Page; label: string }[] = [
   { id: 'local-weather', label: 'Local Weather' },
   { id: 'turbulence', label: 'Turbulence Simulator' },
-  { id: 'api-status', label: 'Enter route number to track weather and turbulence' },
 ];
 
 const BASE_API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
@@ -188,7 +187,6 @@ export default function App() {
   const [routeDemoMode, setRouteDemoMode] = useState(false);
 
   const [cityInput, setCityInput] = useState('San Diego');
-  const [routeNumberInput, setRouteNumberInput] = useState('AA217');
   const [cityWeather, setCityWeather] = useState<CityWeather | null>(null);
   const [forecast, setForecast] = useState<ForecastResponse | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
@@ -405,53 +403,6 @@ export default function App() {
                   </div>
                 </>
               )}
-            </section>
-          )}
-
-          {active === 'api-status' && (
-            <section className="page">
-              <div className="page-header">
-                <h2>Enter route number to track weather and turbulence</h2>
-                <p className="lead">Track a flight route with the same at-a-glance layout style used in Local Weather.</p>
-              </div>
-              <form className="inline-form" onSubmit={(event) => event.preventDefault()}>
-                <input
-                  className="city-search-input"
-                  type="text"
-                  value={routeNumberInput}
-                  onChange={(event) => setRouteNumberInput(event.target.value)}
-                  placeholder="Enter route or flight number"
-                />
-                <button className="primary-btn" type="submit">Track Route</button>
-              </form>
-
-              <div className="metric-grid">
-                <article className="metric"><p>Route Number</p><strong>{routeNumberInput || 'N/A'}</strong></article>
-                <article className="metric"><p>Data Source</p><strong>Live API + Demo Fallback</strong></article>
-                <article className="metric"><p>Turbulence Status</p><strong>Available in Simulator</strong></article>
-                <article className="metric"><p>Weather Coverage</p><strong>Current + Forecast</strong></article>
-                <article className="metric"><p>API Base URL</p><strong>{BASE_API || 'Local Proxy Mode'}</strong></article>
-                <article className="metric"><p>Fallback Mode</p><strong>Deterministic Demo</strong></article>
-              </div>
-
-              <h3 className="section-heading">Tracking Overview</h3>
-              <div className="forecast-list">
-                <div className="forecast-item">
-                  <p>Input</p>
-                  <strong>{routeNumberInput || 'Route Number'}</strong>
-                  <span>Route identifier captured</span>
-                </div>
-                <div className="forecast-item">
-                  <p>Weather Feed</p>
-                  <strong>Ready</strong>
-                  <span>Uses existing weather endpoints</span>
-                </div>
-                <div className="forecast-item">
-                  <p>Turbulence Feed</p>
-                  <strong>Ready</strong>
-                  <span>Routes through simulator view</span>
-                </div>
-              </div>
             </section>
           )}
         </main>

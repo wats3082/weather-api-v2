@@ -2,6 +2,7 @@ import { APIGatewayProxyHandler } from 'aws-lambda'
 import crypto from 'crypto'
 import { getUserId } from '../services/auth'
 import { deleteLocation, listSavedLocations, saveLocation } from '../services/cache'
+import { SaveLocationSchema } from '../lib/validation'
 
 const headers = {
   'Content-Type': 'application/json',
@@ -26,16 +27,16 @@ export const create: APIGatewayProxyHandler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Request body required' }) }
     }
 
-    const { city, label } = JSON.parse(event.body) as { city?: string; label?: string }
-    if (!city?.trim() || !label?.trim()) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'city and label are required' }) }
+    const parsed = SaveLocationSchema.safeParse(JSON.parse(event.body))
+    if (!parsed.success) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: parsed.error.issues[0].message }) }
     }
 
     const location = await saveLocation({
       id: crypto.randomUUID(),
       userId,
-      city: city.trim(),
-      label: label.trim(),
+      city: parsed.data.city,
+      label: parsed.data.label,
       createdAt: new Date().toISOString(),
     })
 

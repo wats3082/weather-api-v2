@@ -1,11 +1,10 @@
 import { APIGatewayProxyHandler } from 'aws-lambda'
 import { TurbulencePredictionEngine } from '../services/turbulencePrediction'
+import { TurbulencePredictSchema } from '../lib/validation'
 
-interface TurbulencePredictRequest {
-  from: string
-  to: string
-  altitude: number
-  time?: string
+const headers = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
 }
 
 export const predict: APIGatewayProxyHandler = async (event) => {
@@ -13,27 +12,21 @@ export const predict: APIGatewayProxyHandler = async (event) => {
     if (!event.body) {
       return {
         statusCode: 400,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
+        headers,
         body: JSON.stringify({ error: 'Request body required' }),
       }
     }
 
-    const request: TurbulencePredictRequest = JSON.parse(event.body)
-    const { from, to, altitude } = request
-
-    if (!from || !to || !altitude) {
+    const parsed = TurbulencePredictSchema.safeParse(JSON.parse(event.body))
+    if (!parsed.success) {
       return {
         statusCode: 400,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-        body: JSON.stringify({ error: 'from, to, and altitude are required' }),
+        headers,
+        body: JSON.stringify({ error: parsed.error.issues[0].message }),
       }
     }
+
+    const { from, to, altitude } = parsed.data
 
     const apiKey = process.env.OPENWEATHER_API_KEY
     if (!apiKey) {

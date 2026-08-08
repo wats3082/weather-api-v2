@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Test and Deploy
 
 on:
   push:
@@ -9,9 +9,31 @@ permissions:
   contents: write
 
 jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix backend
+      - run: npm run build --prefix backend
+      - run: npm run test --prefix backend
+
+  test-infra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix infra/cdk
+      - run: npm run build --prefix infra/cdk
+      - run: npm run synth --prefix infra/cdk
+
   build-frontend:
     runs-on: ubuntu-latest
-
+    needs: [test-backend, test-infra]
     steps:
       - uses: actions/checkout@v4
 
@@ -28,7 +50,7 @@ jobs:
       - name: Build frontend
         run: npm run build:pages --prefix frontend
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://weather-api-v2.onrender.com' }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || '' }}
 
       - name: Deploy to GitHub Pages
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'

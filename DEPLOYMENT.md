@@ -1,224 +1,271 @@
 # Deployment Guide
 
-This guide explains how to deploy Weather API v2 to GitHub Pages (frontend) and AWS via CDK (backend).
+Weather API v2 deploys to **AWS Lambda via CDK** (backend) and **GitHub Pages** (frontend). This is the only supported production path.
 
-## Part 1: GitHub Pages Deployment (Frontend)
+## Architecture
 
-### Step 1: Create a GitHub Repository
-
-1. Go to https://github.com/new
-2. Create repository named: `weather-api-v2`
-3. Copy the repository URL (HTTPS or SSH)
-
-### Step 2: Push Code to GitHub
-
-```bash
-cd weather-api-v2
-
-# Initialize git (if not already done)
-git init
-git add .
-git commit -m "Initial commit: Weather API v2 with turbulence prediction"
-
-# Add remote
-git remote add origin https://github.com/YOUR_USERNAME/weather-api-v2.git
-
-# Push to GitHub
-git branch -M main
-git push -u origin main
+```
+GitHub Pages (frontend)
+  ↓ (built from main branch)
+  ↓ VITE_API_URL secret points to →
+  ↓
+API Gateway + Lambda (backend)
+  ↓
+DynamoDB (cache + saved locations)
+  ↓
+Cognito (user auth)
 ```
 
-### Step 3: Configure GitHub Pages
+## Prerequisites
 
-1. Go to your repository on GitHub
-2. Settings → Pages
-3. Under "Source" select:
-   - Branch: `gh-pages`
-   - Folder: `/ (root)`
-4. Save
+- Node.js 20+
+- AWS account with CLI configured: `aws configure`
+- OpenWeatherMap API key (free tier available at openweathermap.org)
+- GitHub repository (fork/clone of weather-api-v2)
 
-The site will be available at: `https://YOUR_USERNAME.github.io/weather-api-v2`
+## Part 1: Deploy Backend to AWS Lambda
 
-### Step 4: Set Backend API URL (Optional)
-
-If deploying backend to AWS or another service, add a GitHub Secret:
-
-1. Go to Settings → Secrets and variables → Actions
-2. Click "New repository secret"
-3. Name: `VITE_API_URL`
-4. Value: Your backend API URL (e.g., `https://abc123.execute-api.us-east-1.amazonaws.com`)
-
-The GitHub Actions workflow will use this when building.
-
----
-
-## Part 2: AWS Lambda Deployment (Backend)
-
-### Prerequisites
-
-- AWS account
-- AWS CLI configured locally
-- Serverless Framework installed: `npm install -g serverless`
-
-### Step 1: Configure AWS Credentials
+### Step 1: Set up AWS credentials
 
 ```bash
-# Configure AWS CLI
+# Ensure AWS CLI is configured with your account
 aws configure
-
 # Enter:
-# AWS Access Key ID: [your-key]
-# AWS Secret Access Key: [your-secret]
-# Default region: us-east-1
-# Default output format: json
+#   AWS Access Key ID: [your-access-key]
+#   AWS Secret Access Key: [your-secret-key]
+#   Default region: us-east-1
+#   Default output format: json
 ```
 
-### Step 2: Set Environment Variables
-
-```bash
-# Linux/Mac
-export OPENWEATHER_API_KEY=your_api_key_here
-
-# Windows (PowerShell)
-$env:OPENWEATHER_API_KEY='your_api_key_here'
-```
-
-### Step 3: Deploy the backend with CDK
+### Step 2: Bootstrap CDK (first deploy only)
 
 ```bash
 cd infra/cdk
 npm install
+npm run bootstrap
+```
+
+### Step 3: Deploy the stack
+
+```bash
+export OPENWEATHER_API_KEY="your_api_key_here"  # Linux/Mac
+# or
+$env:OPENWEATHER_API_KEY='your_api_key_here'   # Windows PowerShell
+
 npm run deploy
 ```
 
-This will create the API Gateway, Lambda handlers, Cognito resources, and the DynamoDB table used for cache and saved locations, then output the API URL.
+The stack will create:
+- **API Gateway** (`WeatherApi`)
+- **Lambda functions** (weather, forecast, turbulence, locations CRUD)
+- **DynamoDB table** (`weather-api-v2-data`) for caching and saved locations with TTL
+- **Cognito User Pool** for authentication
 
-### Step 4: Update GitHub Secret
+Example output:
+```
+Outputs:
+  ApiUrl = https://abc123.execute-api.us-east-1.amazonaws.com/prod/
+  TableName = weather-api-v2-data
+  UserPoolId = us-east-1_abc123xyz
+  UserPoolClientId = 1a2b3c4d5e6f7g8h9i0j
+```
 
-Add the API URL from step 3 to GitHub as `VITE_API_URL` secret (see Part 1, Step 4)
+**Save these values**—you'll need them for frontend configuration and testing.
 
-### Step 5: Redeploy Frontend
+### Step 4: Test the backend
 
-Push to GitHub to trigger automatic rebuild with the new backend URL:
+```bash
+# Test weather endpoint
+curl "https://YOUR_API_URL/api/weather/Chicago"
+
+# Test turbulence (requires auth token for saved locations)
+curl -X POST "https://YOUR_API_URL/api/turbulence/predict" \
+  -H "Content-Type: application/json" \
+  -d '{"from":"Los Angeles","to":"New York","altitude":35000}'
+```
+
+---
+
+## Part 2: Deploy Frontend to GitHub Pages
+
+### Step 1: Configure GitHub repository
+
+1. Go to your forked repository on GitHub
+2. Settings → Pages
+3. Under "Build and deployment":
+   - Source: Deploy from a branch
+   - Branch: `gh-pages` / `/ (root)`
+4. Save
+
+### Step 2: Add the API URL secret (optional, but recommended)
+
+1. Settings → Secrets and variables → Actions
+2. Click "New repository secret"
+3. Name: `VITE_API_URL`
+4. Value: Your API Gateway URL from Step 1 (e.g., `https://abc123.execute-api.us-east-1.amazonaws.com/prod`)
+5. Click "Add secret"
+
+**If you don't add this secret, the frontend will fall back to demo mode with synthetic weather data.**
+
+### Step 3: Push to main
 
 ```bash
 git add .
-git commit -m "Update backend API URL"
-git push
+git commit -m "Deploy weather-api-v2"
+git push origin main
 ```
+
+This triggers GitHub Actions, which will:
+1. Run backend tests
+2. Run CDK synth validation
+3. Build the frontend
+4. Deploy to GitHub Pages
+
+Your site is now live at: `https://{username}.github.io/weather-api-v2`
+
+### Step 4: Verify live API integration
+
+1. Navigate to your GitHub Pages URL
+2. Go to "Local Weather"
+3. Search for a city
+4. If the API URL secret is set correctly, you'll see **live data** from OpenWeatherMap
+5. If the secret is missing, you'll see **demo/synthetic data** with a notice
 
 ---
 
-## Part 3: Alternative Backend Hosting
+## Part 3: Cognito User Authentication (Optional)
 
-If you prefer not to use AWS Lambda, you can deploy the backend to:
+To enable saved locations and user authentication:
 
-### Render (Free tier available)
+1. Go to AWS Cognito Console
+2. Find your User Pool (name: `weather-api-v2-users`)
+3. Create a user or enable self-service signup
+4. Frontend sign-in can be added via AWS Amplify Auth (see `frontend/src/App.tsx` for integration points)
+
+### Example: Create a test user
+
 ```bash
-# Create account at https://render.com
-# Deploy from GitHub
-# Set environment variable: OPENWEATHER_API_KEY
+aws cognito-idp admin-create-user \
+  --user-pool-id us-east-1_abc123xyz \
+  --username testuser@example.com \
+  --message-action SUPPRESS \
+  --temporary-password TempPass123!
 ```
 
-### Railway.app
-```bash
-# Create account at https://railway.app
-# Deploy from GitHub
-# Set environment variable: OPENWEATHER_API_KEY
-```
-
-### Heroku (Legacy - being sunset)
-```bash
-heroku login
-heroku create
-git push heroku main
-```
+Then reset the permanent password via the Cognito console or CLI.
 
 ---
 
-## Part 4: Monitoring & Maintenance
+## Monitoring & Troubleshooting
 
-### Check GitHub Actions Status
-1. Go to your repository
-2. Click "Actions" tab
-3. View deployment logs
+### Check Lambda logs
 
-### AWS Monitoring
 ```bash
-# View Lambda logs
+# View recent turbulence prediction logs
 aws logs tail /aws/lambda/WeatherApiV2Stack-TurbulencePredictFn --follow
 
-# Monitor API Gateway usage
-# AWS Console → API Gateway → Your API → CloudWatch
+# View weather endpoint logs
+aws logs tail /aws/lambda/WeatherApiV2Stack-WeatherCurrentFn --follow
 ```
 
-### Update Secrets
-To update your OpenWeather API key:
+### Check DynamoDB cache hit rate
 
-**For GitHub Actions:**
-1. Settings → Secrets and variables → Actions
-2. Update `VITE_API_URL` if backend URL changes
+```bash
+aws cloudwatch get-metric-statistics \
+  --namespace AWS/DynamoDB \
+  --metric-name ConsumedReadCapacityUnits \
+  --dimensions Name=TableName,Value=weather-api-v2-data \
+  --start-time $(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%S) \
+  --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
+  --period 300 \
+  --statistics Sum
+```
 
-**For AWS:**
-Re-run `npm run deploy` from `infra/cdk` after updating environment variables or stack code.
+### Frontend shows "Demo mode" with static data
 
----
+- **Cause**: `VITE_API_URL` secret is not set OR backend is unreachable
+- **Fix**: Add `VITE_API_URL` GitHub secret with your API Gateway URL, then re-push to trigger rebuild
 
-## Troubleshooting
+### "Unauthorized" errors when calling `/api/locations`
 
-### GitHub Pages shows 404
-- Verify base path is correct in `frontend/vite.config.ts`
-- Check "gh-pages" branch exists
-- Wait 1-2 minutes for GitHub Pages to rebuild
+- **Cause**: Missing Cognito auth token or invalid token
+- **Fix**: Implement Cognito sign-in flow in frontend (currently locations endpoints require Cognito auth but frontend auth UI is not yet implemented)
 
-### API calls return 404
-- Verify `VITE_API_URL` is set correctly
-- Check backend is deployed and running
-- Test backend directly: `curl https://your-api-url/api/weather/Chicago`
+### API calls time out or return 502
 
-### CORS errors
-- Ensure backend CORS headers are set (they are by default)
-- Check browser console for exact error message
-
-### Frontend builds fail
-- Check GitHub Actions logs
-- Verify `VITE_API_URL` secret is set (can be empty for development)
-- Ensure all dependencies are in package.json
+- **Cause**: Lambda cold start or OpenWeatherMap rate limit
+- **Fix**: CDK Lambda functions have 15-second timeout; ensure `OPENWEATHER_API_KEY` is set and valid
 
 ---
 
-## CI/CD Pipeline
+## Updating the Deployment
 
-The GitHub Actions workflow automatically:
+### To update backend code
 
-1. **On every push to main branch:**
-   - Installs dependencies
-   - Builds React frontend
-   - Deploys frontend to GitHub Pages
+1. Make changes in `backend/src/`
+2. Test locally: `npm run dev --prefix backend`
+3. Push to main (triggers CI tests)
+4. If tests pass, re-run: `npm run deploy --prefix infra/cdk`
 
-2. **On pull requests:**
-   - Runs the same build checks
-   - Prevents merging if build fails
+### To update frontend code
+
+1. Make changes in `frontend/src/`
+2. Test locally: `npm run dev --prefix frontend`
+3. Push to main (triggers frontend rebuild + deploy to GitHub Pages)
+
+### To update infrastructure
+
+1. Edit `infra/cdk/lib/weather-api-v2-stack.ts`
+2. Run: `npm run synth --prefix infra/cdk` (validates the template)
+3. Push to main (CI will synth and test)
+4. Deploy: `npm run deploy --prefix infra/cdk`
 
 ---
 
-## Final Checklist
+## Architecture Decisions
 
-- [ ] Created GitHub repository
-- [ ] Pushed code to GitHub
-- [ ] GitHub Pages enabled and building
-- [ ] GitHub Actions workflow running successfully
-- [ ] Frontend accessible at `YOUR_USERNAME.github.io/weather-api-v2`
-- [ ] (Optional) Backend deployed to AWS/Render/Railway
-- [ ] (Optional) `VITE_API_URL` secret set in GitHub
-- [ ] (Optional) Backend API URL working
+### Why CDK over Serverless Framework?
+
+- **Unified IaC**: Single source of truth for all AWS resources (API Gateway, Lambda, DynamoDB, Cognito)
+- **Type-safe**: Full TypeScript support with IDE autocomplete
+- **No duplication**: One stack definition (not split across `serverless.yml` and separate CDK)
+- **Testable**: Easy to write unit tests for infrastructure logic
+- **Maintainable**: Clear resource dependencies and outputs
+
+### Why GitHub Pages frontend?
+
+- **Free hosting** with built-in GitHub Pages (no separate hosting cost)
+- **CI/CD included** (GitHub Actions automatically builds and deploys on push)
+- **CORS friendly** (can call cross-origin API Gateway URLs)
+
+### Why DynamoDB with TTL?
+
+- **Distributed cache**: In-memory fallback for local dev; DynamoDB for production
+- **Cost-effective**: Pay-per-request billing (no provisioned capacity)
+- **TTL cleanup**: Automatic expiration of old weather data (10-minute cache for weather, 30-minute for forecast, 24-hour for geocoding)
+
+---
+
+## Troubleshooting Checklist
+
+- [ ] AWS CLI configured: `aws sts get-caller-identity`
+- [ ] `OPENWEATHER_API_KEY` environment variable set
+- [ ] CDK bootstrap run: `npm run bootstrap --prefix infra/cdk`
+- [ ] Backend tests passing: `npm run test --prefix backend`
+- [ ] CDK synth validates: `npm run synth --prefix infra/cdk`
+- [ ] Stack deployed: `aws cloudformation describe-stacks --stack-name WeatherApiV2Stack`
+- [ ] Frontend `VITE_API_URL` secret set (or empty to use demo mode)
+- [ ] GitHub Pages enabled in repository settings
+- [ ] Backend logs clean: `aws logs tail /aws/lambda/WeatherApiV2Stack --follow`
 
 ---
 
 ## Support
 
 For issues:
-1. Check GitHub Actions logs
-2. Check AWS CloudWatch logs
-3. Verify environment variables
-4. Test API endpoints manually with curl/Postman
+
+1. Check GitHub Actions logs (repository → Actions tab)
+2. Check AWS CloudWatch logs (see "Monitoring & Troubleshooting" above)
+3. Verify environment variables and secrets are set correctly
+4. Test API endpoints manually with `curl` or Postman
+5. Check that OpenWeatherMap API key is valid and has remaining quota

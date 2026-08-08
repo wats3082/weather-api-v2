@@ -1,49 +1,5 @@
 import { APIGatewayProxyHandler } from 'aws-lambda'
-import axios from 'axios'
-
-interface CurrentWeatherRequest {
-  city: string
-}
-
-interface WeatherResponse {
-  city: string
-  temperature: number
-  condition: string
-  humidity: number
-  windSpeed: number
-  pressure: number
-  visibility: number
-  cloudCover: number
-}
-
-const getWeatherData = async (city: string): Promise<WeatherResponse> => {
-  const apiKey = process.env.OPENWEATHER_API_KEY
-  if (!apiKey) throw new Error('API key not configured')
-
-  try {
-    const response = await axios.get('https://api.openweathermap.org/data/2.5/weather', {
-      params: {
-        q: city,
-        appid: apiKey,
-        units: 'imperial',
-      },
-    })
-
-    const data = response.data
-    return {
-      city: data.name,
-      temperature: data.main.temp,
-      condition: data.weather[0].main,
-      humidity: data.main.humidity,
-      windSpeed: data.wind.speed,
-      pressure: data.main.pressure,
-      visibility: data.visibility / 1000,
-      cloudCover: data.clouds.all,
-    }
-  } catch (error) {
-    throw new Error(`Failed to fetch weather for ${city}`)
-  }
-}
+import { getCurrentWeatherByCity, getForecast as fetchForecast } from '../services/openWeather'
 
 export const getCurrent: APIGatewayProxyHandler = async (event) => {
   try {
@@ -60,7 +16,7 @@ export const getCurrent: APIGatewayProxyHandler = async (event) => {
       }
     }
 
-    const weather = await getWeatherData(city)
+    const weather = await getCurrentWeatherByCity(city)
 
     return {
       statusCode: 200,
@@ -98,37 +54,8 @@ export const getForecast: APIGatewayProxyHandler = async (event) => {
       }
     }
 
-    const apiKey = process.env.OPENWEATHER_API_KEY
-    if (!apiKey) throw new Error('API key not configured')
-
-    // Get coordinates first
-    const geoResponse = await axios.get('https://api.openweathermap.org/data/2.5/weather', {
-      params: {
-        q: city,
-        appid: apiKey,
-      },
-    })
-
-    const { lat, lon } = geoResponse.data.coord
-
-    // Get forecast
-    const forecastResponse = await axios.get('https://api.openweathermap.org/data/2.5/forecast', {
-      params: {
-        lat,
-        lon,
-        appid: apiKey,
-        units: 'imperial',
-      },
-    })
-
-    const forecast = forecastResponse.data.list.slice(0, parseInt(days) * 8).map((item: any) => ({
-      time: item.dt_txt,
-      temperature: item.main.temp,
-      condition: item.weather[0].main,
-      humidity: item.main.humidity,
-      windSpeed: item.wind.speed,
-      cloudCover: item.clouds.all,
-    }))
+    const dayCount = Number.parseInt(days, 10)
+    const forecast = await fetchForecast(city, dayCount)
 
     return {
       statusCode: 200,
@@ -138,7 +65,7 @@ export const getForecast: APIGatewayProxyHandler = async (event) => {
       },
       body: JSON.stringify({
         city,
-        days: parseInt(days),
+        days: dayCount,
         forecast,
       }),
     }

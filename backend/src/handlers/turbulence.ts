@@ -90,6 +90,7 @@ export const predict: APIGatewayProxyHandler = async (event) => {
       distance: Math.round(distance),
       flightTime,
       maxWindSpeed: Math.round(Math.max(...waypoints.map((w) => w.weather.windSpeed || 0))),
+      overallRisk: turbulenceData.riskLevel,
       ...turbulenceData,
       waypoints,
     }

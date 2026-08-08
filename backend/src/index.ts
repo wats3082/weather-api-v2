@@ -4,8 +4,16 @@
  */
 
 import express from 'express'
+import { APIGatewayProxyResult } from 'aws-lambda'
 import { predict } from './handlers/turbulence'
 import { getCurrent, getForecast } from './handlers/weather'
+import { create, list, remove } from './handlers/locations'
+
+async function run(h: (...args: any[]) => Promise<void | APIGatewayProxyResult>, event: any) {
+  const res = await h(event, {} as any, {} as any)
+  if (!res) throw new Error('Handler returned no response')
+  return res
+}
 
 const app = express()
 app.use(express.json())
@@ -36,7 +44,7 @@ app.post('/api/turbulence/predict', async (req, res) => {
     isBase64Encoded: false,
   }
 
-  const result = await predict(event as any, {} as any, {} as any)
+  const result = await run(predict as any, event)
   res.status(result.statusCode).send(JSON.parse(result.body))
 })
 
@@ -53,7 +61,7 @@ app.get('/api/weather/:city', async (req, res) => {
     isBase64Encoded: false,
   }
 
-  const result = await getCurrent(event as any, {} as any, {} as any)
+  const result = await run(getCurrent as any, event)
   res.status(result.statusCode).send(JSON.parse(result.body))
 })
 
@@ -70,8 +78,59 @@ app.get('/api/forecast/:city', async (req, res) => {
     isBase64Encoded: false,
   }
 
-  const result = await getForecast(event as any, {} as any, {} as any)
+  const result = await run(getForecast as any, event)
   res.status(result.statusCode).send(JSON.parse(result.body))
+})
+
+app.get('/api/locations', async (req, res) => {
+  const result = await run(list as any,
+    {
+      body: null,
+      pathParameters: null,
+      queryStringParameters: null,
+      headers: { 'x-user-id': String(req.headers['x-user-id'] || '') },
+      httpMethod: 'GET',
+      path: '/api/locations',
+      resource: '',
+      requestContext: { authorizer: undefined } as any,
+      isBase64Encoded: false,
+    } as any
+  )
+  res.status(result.statusCode).send(result.body ? JSON.parse(result.body) : undefined)
+})
+
+app.post('/api/locations', async (req, res) => {
+  const result = await run(create as any,
+    {
+      body: JSON.stringify(req.body),
+      pathParameters: null,
+      queryStringParameters: null,
+      headers: { 'x-user-id': String(req.headers['x-user-id'] || '') },
+      httpMethod: 'POST',
+      path: '/api/locations',
+      resource: '',
+      requestContext: { authorizer: undefined } as any,
+      isBase64Encoded: false,
+    } as any
+  )
+  res.status(result.statusCode).send(result.body ? JSON.parse(result.body) : undefined)
+})
+
+app.delete('/api/locations/:id', async (req, res) => {
+  const result = await run(remove as any,
+    {
+      body: null,
+      pathParameters: { id: req.params.id },
+      queryStringParameters: null,
+      headers: { 'x-user-id': String(req.headers['x-user-id'] || '') },
+      httpMethod: 'DELETE',
+      path: `/api/locations/${req.params.id}`,
+      resource: '',
+      requestContext: { authorizer: undefined } as any,
+      isBase64Encoded: false,
+    } as any
+  )
+  res.status(result.statusCode).send(result.body ? JSON.parse(result.body) : undefined)
 })
 
 const PORT = process.env.PORT || 3001

@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide explains how to deploy Weather API v2 to GitHub Pages (frontend) and AWS Lambda (backend).
+This guide explains how to deploy Weather API v2 to GitHub Pages (frontend) and AWS via CDK (backend).
 
 ## Part 1: GitHub Pages Deployment (Frontend)
 
@@ -83,18 +83,15 @@ export OPENWEATHER_API_KEY=your_api_key_here
 $env:OPENWEATHER_API_KEY='your_api_key_here'
 ```
 
-### Step 3: Deploy to AWS
+### Step 3: Deploy the backend with CDK
 
 ```bash
-cd backend
+cd infra/cdk
 npm install
 npm run deploy
 ```
 
-This will:
-- Create Lambda functions
-- Create API Gateway endpoints
-- Output your API URL (e.g., `https://abc123.execute-api.us-east-1.amazonaws.com/api/...`)
+This will create the API Gateway, Lambda handlers, Cognito resources, and the DynamoDB table used for cache and saved locations, then output the API URL.
 
 ### Step 4: Update GitHub Secret
 
@@ -149,7 +146,7 @@ git push heroku main
 ### AWS Monitoring
 ```bash
 # View Lambda logs
-aws logs tail /aws/lambda/weather-api-v2-turbulencePredict --follow
+aws logs tail /aws/lambda/WeatherApiV2Stack-TurbulencePredictFn --follow
 
 # Monitor API Gateway usage
 # AWS Console → API Gateway → Your API → CloudWatch
@@ -163,10 +160,7 @@ To update your OpenWeather API key:
 2. Update `VITE_API_URL` if backend URL changes
 
 **For AWS:**
-```bash
-# Update environment variable
-serverless deploy function -f turbulencePredict
-```
+Re-run `npm run deploy` from `infra/cdk` after updating environment variables or stack code.
 
 ---
 
@@ -200,9 +194,7 @@ The GitHub Actions workflow automatically:
 1. **On every push to main branch:**
    - Installs dependencies
    - Builds React frontend
-   - Builds TypeScript backend
    - Deploys frontend to GitHub Pages
-   - Reports backend build status
 
 2. **On pull requests:**
    - Runs the same build checks

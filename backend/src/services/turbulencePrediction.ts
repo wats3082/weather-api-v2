@@ -1,4 +1,4 @@
-import axios from 'axios'
+import { getCoordinates, getCurrentWeatherByCoords } from './openWeather'
 
 interface GeoCoordinates {
   lat: number
@@ -25,7 +25,6 @@ interface AltitudeWindData {
 
 export class TurbulencePredictionEngine {
   private apiKey: string
-  private baseUrl = 'https://api.openweathermap.org/data/2.5'
 
   constructor(apiKey: string) {
     this.apiKey = apiKey
@@ -35,50 +34,24 @@ export class TurbulencePredictionEngine {
    * Get coordinates for a city
    */
   async getCoordinates(city: string): Promise<GeoCoordinates> {
-    try {
-      const response = await axios.get(`${this.baseUrl}/weather`, {
-        params: {
-          q: city,
-          appid: this.apiKey,
-        },
-      })
-      return {
-        lat: response.data.coord.lat,
-        lon: response.data.coord.lon,
-      }
-    } catch (error) {
-      throw new Error(`Failed to get coordinates for ${city}`)
-    }
+    return getCoordinates(city)
   }
 
   /**
    * Get current weather data for a location
    */
   async getWeatherData(lat: number, lon: number): Promise<WeatherData> {
-    try {
-      const response = await axios.get(`${this.baseUrl}/weather`, {
-        params: {
-          lat,
-          lon,
-          appid: this.apiKey,
-          units: 'imperial',
-        },
-      })
-
-      const data = response.data
-      return {
-        temp: data.main.temp,
-        humidity: data.main.humidity,
-        pressure: data.main.pressure,
-        windSpeed: data.wind.speed,
-        windDirection: data.wind.deg || 0,
-        cloudCover: data.clouds.all,
-        visibility: data.visibility / 1000, // Convert to km
-        condition: data.weather[0].main,
-        description: data.weather[0].description,
-      }
-    } catch (error) {
-      throw new Error('Failed to fetch weather data')
+    const data = await getCurrentWeatherByCoords({ lat, lon })
+    return {
+      temp: data.temperature,
+      humidity: data.humidity,
+      pressure: data.pressure,
+      windSpeed: data.windSpeed,
+      windDirection: 0,
+      cloudCover: data.cloudCover,
+      visibility: data.visibility,
+      condition: data.condition,
+      description: data.condition,
     }
   }
 
@@ -231,9 +204,11 @@ export class TurbulencePredictionEngine {
       const gravityWaves = this.calculateGravityWavePotential(midWeather.windSpeed, midWeather.temp)
       const cat = this.calculateCATpotential(altitudeWinds[2].speed, windShear, jetStream.intensity)
       const convection = this.detectConvection(midWeather.cloudCover, midWeather.humidity, midWeather.temp)
+      const cape = this.calculateCAP(midWeather.temp, midWeather.temp - ((100 - midWeather.humidity) / 5), midWeather.pressure)
 
       // Calculate overall turbulence score (0-10)
-      const turbulenceScore = (cat + convection + gravityWaves + jetStream.intensity) / 4
+      const capeFactor = Math.min(cape / 1000, 2)
+      const turbulenceScore = (cat + convection + gravityWaves + jetStream.intensity + capeFactor) / 5
 
       // Determine risk level
       let riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'SEVERE'
@@ -247,6 +222,7 @@ export class TurbulencePredictionEngine {
       if (jetStream.isPresent) riskFactors.push(`Jet stream detected with intensity ${jetStream.intensity.toFixed(1)}/10`)
       if (windShear > 5) riskFactors.push(`High wind shear: ${windShear.toFixed(1)} knots/1000ft`)
       if (convection > 4) riskFactors.push(`Convective activity detected`)
+      if (cape > 500) riskFactors.push(`Elevated instability (CAPE ${Math.round(cape)})`)
       if (gravityWaves > 3) riskFactors.push(`Mountain wave turbulence potential`)
       if (midWeather.cloudCover > 80) riskFactors.push('High cloud cover')
       if (midWeather.condition.includes('Thunder')) riskFactors.push('Thunderstorm activity')

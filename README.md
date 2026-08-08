@@ -1,12 +1,13 @@
 # weather-api-v2
 
-React/Vite frontend with a portfolio-style layout and an AWS serverless backend foundation.
+React/Vite frontend with an AWS CDK-managed serverless backend.
 
 ## MVP scope
 
 - Weather lookup and forecast views
 - Route turbulence risk scoring endpoint
 - Saved locations by authenticated user
+- DynamoDB-backed TTL cache for geocoding, current weather, and forecasts
 
 ## Repository layout
 
@@ -33,9 +34,13 @@ npm run bootstrap
 npm run deploy
 ```
 
-## Planned API routes
+Set `OPENWEATHER_API_KEY` before deploying. The stack provisions API Gateway, Lambda handlers, a DynamoDB table used for cache and saved locations, and a Cognito user pool for protected locations routes.
 
-- `POST /api/routes/risk`
-- `GET /api/locations`
-- `POST /api/locations`
-- `DELETE /api/locations/:id`
+## API routes
+
+- `GET /api/weather/:city`
+- `GET /api/forecast/:city?days=1`
+- `POST /api/turbulence/predict`
+- `GET /api/locations` (Cognito auth required)
+- `POST /api/locations` (Cognito auth required)
+- `DELETE /api/locations/:id` (Cognito auth required)

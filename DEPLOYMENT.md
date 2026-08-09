@@ -20,7 +20,6 @@ Cognito (user auth)
 
 - Node.js 20+
 - AWS account with CLI configured: `aws configure`
-- OpenWeatherMap API key (free tier available at openweathermap.org)
 - GitHub repository (fork/clone of weather-api-v2)
 
 ## Part 1: Deploy Backend to AWS Lambda
@@ -48,10 +47,6 @@ npm run bootstrap
 ### Step 3: Deploy the stack
 
 ```bash
-export OPENWEATHER_API_KEY="your_api_key_here"  # Linux/Mac
-# or
-$env:OPENWEATHER_API_KEY='your_api_key_here'   # Windows PowerShell
-
 npm run deploy
 ```
 
@@ -105,7 +100,7 @@ curl -X POST "https://YOUR_API_URL/api/turbulence/predict" \
 4. Value: Your API Gateway URL from Step 1 (e.g., `https://abc123.execute-api.us-east-1.amazonaws.com/prod`)
 5. Click "Add secret"
 
-**If you don't add this secret, the frontend will fall back to demo mode with synthetic weather data.**
+**If you don't add this secret, the frontend will not know your API base URL and requests will fail visibly.**
 
 ### Step 3: Push to main
 
@@ -128,8 +123,8 @@ Your site is now live at: `https://{username}.github.io/weather-api-v2`
 1. Navigate to your GitHub Pages URL
 2. Go to "Local Weather"
 3. Search for a city
-4. If the API URL secret is set correctly, you'll see **live data** from OpenWeatherMap
-5. If the secret is missing, you'll see **demo/synthetic data** with a notice
+4. If the API URL secret is set correctly, you'll see **live data**
+5. If the secret is missing, requests fail instead of falling back to mock data
 
 ---
 
@@ -193,8 +188,8 @@ aws cloudwatch get-metric-statistics \
 
 ### API calls time out or return 502
 
-- **Cause**: Lambda cold start or OpenWeatherMap rate limit
-- **Fix**: CDK Lambda functions have 15-second timeout; ensure `OPENWEATHER_API_KEY` is set and valid
+- **Cause**: Lambda cold start or upstream Open-Meteo outage/rate limiting
+- **Fix**: CDK Lambda functions have 15-second timeout; verify upstream availability and cache behavior
 
 ---
 
@@ -249,12 +244,11 @@ aws cloudwatch get-metric-statistics \
 ## Troubleshooting Checklist
 
 - [ ] AWS CLI configured: `aws sts get-caller-identity`
-- [ ] `OPENWEATHER_API_KEY` environment variable set
 - [ ] CDK bootstrap run: `npm run bootstrap --prefix infra/cdk`
 - [ ] Backend tests passing: `npm run test --prefix backend`
 - [ ] CDK synth validates: `npm run synth --prefix infra/cdk`
 - [ ] Stack deployed: `aws cloudformation describe-stacks --stack-name WeatherApiV2Stack`
-- [ ] Frontend `VITE_API_URL` secret set (or empty to use demo mode)
+- [ ] Frontend `VITE_API_URL` secret set
 - [ ] GitHub Pages enabled in repository settings
 - [ ] Backend logs clean: `aws logs tail /aws/lambda/WeatherApiV2Stack --follow`
 
@@ -268,4 +262,4 @@ For issues:
 2. Check AWS CloudWatch logs (see "Monitoring & Troubleshooting" above)
 3. Verify environment variables and secrets are set correctly
 4. Test API endpoints manually with `curl` or Postman
-5. Check that OpenWeatherMap API key is valid and has remaining quota
+5. Check that Open-Meteo is reachable and returning forecast/geocoding data

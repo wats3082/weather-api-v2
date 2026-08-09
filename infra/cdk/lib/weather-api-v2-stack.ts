@@ -27,9 +27,9 @@ export class WeatherApiV2Stack extends Stack {
     });
 
     const backendRoot = path.join(__dirname, '..', '..', '..', 'backend', 'src');
+    const cdkRoot = path.join(__dirname, '..', '..');
     const env = {
       DATA_TABLE_NAME: table.tableName,
-      OPENWEATHER_API_KEY: process.env.OPENWEATHER_API_KEY ?? '',
     };
 
     const mkFn = (id: string, entry: string) =>
@@ -37,6 +37,7 @@ export class WeatherApiV2Stack extends Stack {
         runtime: lambda.Runtime.NODEJS_20_X,
         entry: path.join(backendRoot, entry),
         handler: 'handler',
+        projectRoot: cdkRoot,
         timeout: Duration.seconds(15),
         memorySize: 512,
         environment: env,
@@ -46,12 +47,12 @@ export class WeatherApiV2Stack extends Stack {
         },
       });
 
-    const weatherCurrent = mkFn('WeatherCurrentFn', 'handlers/weather-current.ts');
-    const weatherForecast = mkFn('WeatherForecastFn', 'handlers/weather-forecast.ts');
-    const turbulencePredict = mkFn('TurbulencePredictFn', 'handlers/turbulence-predict.ts');
-    const locationsList = mkFn('LocationsListFn', 'handlers/locations-list.ts');
-    const locationsCreate = mkFn('LocationsCreateFn', 'handlers/locations-create.ts');
-    const locationsDelete = mkFn('LocationsDeleteFn', 'handlers/locations-delete.ts');
+    const weatherCurrent = mkFn('WeatherCurrentFn', 'handlers/weather.ts');
+    const weatherForecast = mkFn('WeatherForecastFn', 'handlers/weather.ts');
+    const turbulencePredict = mkFn('TurbulencePredictFn', 'handlers/turbulence.ts');
+    const locationsList = mkFn('LocationsListFn', 'handlers/locations.ts');
+    const locationsCreate = mkFn('LocationsCreateFn', 'handlers/locations.ts');
+    const locationsDelete = mkFn('LocationsDeleteFn', 'handlers/locations.ts');
 
     for (const fn of [weatherCurrent, weatherForecast, turbulencePredict, locationsList, locationsCreate, locationsDelete]) {
       table.grantReadWriteData(fn);

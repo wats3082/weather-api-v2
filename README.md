@@ -7,11 +7,11 @@ A serverless weather and turbulence forecasting API with a React frontend.
 
 ## Features
 
-- **Weather lookup**: Current conditions and 5-day forecasts via OpenWeatherMap
-- **Turbulence risk scoring**: Predicts aviation turbulence based on surface weather heuristics
+- **Weather lookup**: Current conditions and 5-day forecasts via Open-Meteo
+- **Turbulence risk scoring**: Predicts aviation turbulence from available Open-Meteo surface weather
 - **Route tracking**: Search between cities, see weather along the route
 - **Saved locations**: Bookmark favorite cities (requires Cognito authentication)
-- **DynamoDB cache**: Reduces OpenWeatherMap API load with TTL expiration
+- **DynamoDB cache**: Reduces upstream API load with TTL expiration
 
 ## Tech stack
 
@@ -19,7 +19,7 @@ A serverless weather and turbulence forecasting API with a React frontend.
 - **Backend**: Express.js + TypeScript (Lambda entry points)
 - **Infrastructure**: AWS CDK (API Gateway, Lambda, DynamoDB, Cognito)
 - **Cache**: In-memory + DynamoDB TTL
-- **Data source**: OpenWeatherMap Geocoding/Current/Forecast APIs
+- **Data source**: Open-Meteo Geocoding/Forecast APIs
 
 ## Getting started
 
@@ -138,7 +138,6 @@ GitHub Actions workflow (`.github/workflows/deploy.yml`):
 4. Deploys frontend to GitHub Pages
 
 Requires:
-- OpenWeatherMap API key (in GitHub Actions secrets)
 - AWS credentials (for CDK deploy job, not yet CI-integrated)
 
 ## Repository layout
@@ -152,7 +151,7 @@ frontend/
   
 backend/
   src/
-    services/       Cache, OpenWeather, auth, HTTP client
+    services/       Cache, Open-Meteo, auth, HTTP client
     handlers/       Lambda entry points (weather, turbulence, locations)
     lib/            Utilities (validation schemas, turbulence engine)
     index.ts        Express adapter for local dev
@@ -176,7 +175,7 @@ The heuristic model scores 5 meteorological factors (0–1 scale):
 
 **Overall risk** = mean of all factors (0 = smooth, 1 = severe)
 
-⚠️ **Disclaimer**: This is a demonstration heuristic. For aviation operations, use official NOAA/FAA turbulence products and PIREPs.
+⚠️ **Disclaimer**: This is a demonstration heuristic. Open-Meteo does not expose CAPE, jet stream, or turbulence-specific aviation fields here, so those factors are estimated from available surface/weather data only. For aviation operations, use official NOAA/FAA turbulence products and PIREPs.
 
 ## Architecture decisions
 
@@ -195,7 +194,7 @@ Pay-per-request billing scales to zero traffic cost, TTL auto-cleanup removes st
 ## Known limitations
 
 - **Flight tracking**: "Route tracking" currently requires free-text city names (e.g., "Los Angeles" to "New York"). Real flight number / scheduled-flight lookup is not implemented (would require OpenSky Network or FlightAware integration).
-- **Real aviation weather**: Turbulence prediction uses surface weather heuristics only. Real aviation hazards (SIGMET, PIREP, turbulence/icing forecasts) are not integrated.
+- **Real aviation weather**: Turbulence prediction uses available Open-Meteo surface weather only. Real aviation hazards (SIGMET, PIREP, turbulence/icing forecasts) are not integrated.
 - **Cognito frontend auth**: Locations API is protected but the frontend sign-in UI is not yet implemented. Local dev uses `x-user-id` header fallback.
 
 ## Next steps (future work)

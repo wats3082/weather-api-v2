@@ -1,4 +1,4 @@
-import { getCoordinates, getCurrentWeatherByCoords } from './openWeather'
+import { getCoordinates, getCurrentWeatherByCoords } from './openMeteo'
 
 interface GeoCoordinates {
   lat: number
@@ -24,11 +24,7 @@ interface AltitudeWindData {
 }
 
 export class TurbulencePredictionEngine {
-  private apiKey: string
-
-  constructor(apiKey: string) {
-    this.apiKey = apiKey
-  }
+  constructor(_: string) {}
 
   /**
    * Get coordinates for a city

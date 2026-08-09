@@ -62,86 +62,6 @@ const NAV: { id: Page; label: string }[] = [
 
 const BASE_API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 const apiUrl = (path: string) => (BASE_API ? `${BASE_API}${path}` : path);
-const mockConditions = ['Clear', 'Clouds', 'Rain', 'Mist'];
-const mockRisks: TurbulenceResponse['overallRisk'][] = ['LOW', 'MEDIUM', 'HIGH', 'SEVERE'];
-
-function hashSeed(input: string): number {
-  return input.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-}
-
-function mockCityWeather(city: string): CityWeather {
-  const seed = hashSeed(city.toLowerCase());
-  return {
-    city,
-    temperature: 58 + (seed % 35),
-    condition: mockConditions[seed % mockConditions.length],
-    humidity: 35 + (seed % 55),
-    windSpeed: 6 + (seed % 24),
-    pressure: 995 + (seed % 25),
-    visibility: 6 + (seed % 8),
-    cloudCover: seed % 100,
-  };
-}
-
-function mockForecast(city: string): ForecastResponse {
-  const base = hashSeed(city.toLowerCase());
-  const now = Date.now();
-  return {
-    city,
-    days: 1,
-    forecast: Array.from({ length: 8 }, (_, idx) => ({
-      time: new Date(now + idx * 3 * 60 * 60 * 1000).toISOString(),
-      temperature: 56 + ((base + idx * 3) % 34),
-      condition: mockConditions[(base + idx) % mockConditions.length],
-      humidity: 40 + ((base + idx * 5) % 50),
-      windSpeed: 8 + ((base + idx * 2) % 22),
-      cloudCover: (base + idx * 11) % 100,
-    })),
-  };
-}
-
-function mockRouteData(from: string, to: string, altitude: number): TurbulenceResponse {
-  const base = hashSeed(`${from}-${to}-${altitude}`);
-  const turbulenceScore = Number(((base % 90) / 10 + 1).toFixed(1));
-  const overallRisk = mockRisks[Math.min(3, Math.floor(turbulenceScore / 2.6))];
-  const waypoints: Waypoint[] = [from, `${from} WP`, `${to} WP`, to].map((city, idx) => {
-    const w = mockCityWeather(city);
-    const level = mockRisks[Math.min(3, Math.floor((turbulenceScore + idx) / 3))];
-    return {
-      city,
-      weather: {
-        temp: Math.round(w.temperature),
-        condition: w.condition,
-        windSpeed: Math.round(w.windSpeed),
-      },
-      turbulence: { level },
-    };
-  });
-
-  const distance = 420 + (base % 2200);
-  return {
-    from,
-    to,
-    altitude,
-    distance,
-    flightTime: (distance / 450).toFixed(1),
-    maxWindSpeed: Math.max(...waypoints.map((wp) => wp.weather.windSpeed)),
-    overallRisk,
-    turbulenceScore,
-    recommendation:
-      overallRisk === 'SEVERE'
-        ? 'Severe projected turbulence. Consider delay or reroute.'
-        : overallRisk === 'HIGH'
-          ? 'Elevated turbulence likely. Review alternate paths.'
-          : 'Manageable projected route conditions.',
-    riskFactors: [
-      'Jet stream crosswind zone',
-      'Vertical wind shear at cruise altitude',
-      'Localized convective weather cells',
-    ],
-    waypoints,
-  };
-}
 
 function riskClass(risk: TurbulenceResponse['overallRisk']): string {
   if (risk === 'LOW') return 'low';
@@ -153,8 +73,8 @@ function riskClass(risk: TurbulenceResponse['overallRisk']): string {
 function SimulatedRouteMap({ from, to }: { from: string; to: string }) {
   return (
     <div className="map-card">
-      <h3>Simulated Route Map (Dummy Data)</h3>
-      <svg className="route-map" viewBox="0 0 640 240" role="img" aria-label="Simulated route risk map">
+      <h3>Approximate Route Visualization</h3>
+      <svg className="route-map" viewBox="0 0 640 240" role="img" aria-label="Approximate route visualization">
         <rect x="0" y="0" width="640" height="240" rx="12" />
         <line x1="80" y1="170" x2="250" y2="120" className="route-segment green" />
         <line x1="250" y1="120" x2="430" y2="95" className="route-segment yellow" />
@@ -184,15 +104,11 @@ export default function App() {
   const [routeData, setRouteData] = useState<TurbulenceResponse | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
-  const [routeDemoMode, setRouteDemoMode] = useState(false);
-
   const [cityInput, setCityInput] = useState('San Diego');
   const [cityWeather, setCityWeather] = useState<CityWeather | null>(null);
   const [forecast, setForecast] = useState<ForecastResponse | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState<string | null>(null);
-  const [weatherDemoMode, setWeatherDemoMode] = useState(false);
-
   const handleRouteSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setRouteLoading(true);
@@ -213,11 +129,9 @@ export default function App() {
       }
       const data = (await response.json()) as TurbulenceResponse;
       setRouteData(data);
-      setRouteDemoMode(false);
     } catch (error) {
-      setRouteData(mockRouteData(from, to, altitude));
-      setRouteDemoMode(true);
-      setRouteError(`Live API unavailable. Showing demo route data (${(error as Error).message}).`);
+      setRouteData(null);
+      setRouteError(`Live API unavailable: ${(error as Error).message}`);
     } finally {
       setRouteLoading(false);
     }
@@ -246,12 +160,10 @@ export default function App() {
       const forecastData = (await forecastRes.json()) as ForecastResponse;
       setCityWeather(weatherData);
       setForecast(forecastData);
-      setWeatherDemoMode(false);
     } catch (error) {
-      setCityWeather(mockCityWeather(city));
-      setForecast(mockForecast(city));
-      setWeatherDemoMode(true);
-      setWeatherError(`Live API unavailable. Showing demo weather data (${(error as Error).message}).`);
+      setCityWeather(null);
+      setForecast(null);
+      setWeatherError(`Live API unavailable: ${(error as Error).message}`);
     } finally {
       setWeatherLoading(false);
     }
@@ -263,7 +175,7 @@ export default function App() {
         <div>
           <p className="eyebrow">Weather API v2</p>
           <h1>Local Weather + Turbulence Simulator</h1>
-          <p className="tagline">Portfolio layout with restored v1 weather features and simulator demo mode.</p>
+          <p className="tagline">Real-time weather via Open-Meteo and turbulence analysis for flight planning.</p>
         </div>
       </header>
 
@@ -288,7 +200,6 @@ export default function App() {
                 <h2>Local Weather</h2>
                 <p className="lead">Search a city to view current conditions and short-range forecast data.</p>
               </div>
-              {weatherDemoMode && <p className="banner">Demo mode is active for weather data.</p>}
               <form className="inline-form" onSubmit={handleCityWeatherSearch}>
                 <input
                   className="city-search-input"
@@ -337,7 +248,6 @@ export default function App() {
                 <h2>Turbulence Simulator</h2>
                 <p className="lead">Compare route conditions and projected turbulence for a sample flight path.</p>
               </div>
-              {routeDemoMode && <p className="banner">Demo mode is active for turbulence data.</p>}
               <form className="turbulence-form" onSubmit={handleRouteSubmit}>
                 <label>
                   From

@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler } from 'aws-lambda'
 import { z } from 'zod'
-import { getCurrentWeatherByCity, getForecast as fetchForecast } from '../services/openWeather'
+import { getCurrentWeatherByCity, getForecast as fetchForecast } from '../services/openMeteo'
 import { CityQuerySchema, ForecastQuerySchema } from '../lib/validation'
 
 const headers = {

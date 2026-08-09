@@ -28,12 +28,7 @@ export const predict: APIGatewayProxyHandler = async (event) => {
 
     const { from, to, altitude } = parsed.data
 
-    const apiKey = process.env.OPENWEATHER_API_KEY
-    if (!apiKey) {
-      throw new Error('OpenWeather API key not configured')
-    }
-
-    const engine = new TurbulencePredictionEngine(apiKey)
+    const engine = new TurbulencePredictionEngine('')
 
     // Get coordinates for both cities
     const [fromCoords, toCoords] = await Promise.all([
@@ -67,12 +62,11 @@ export const predict: APIGatewayProxyHandler = async (event) => {
             windSpeed: Math.round(weather.windSpeed),
             humidity: weather.humidity,
           },
-          turbulence: {
-            level: turbulenceData.riskLevel,
-          },
+          turbulence: { level: turbulenceData.riskLevel },
         })
       } catch (e) {
-        console.error('Error getting waypoint data:', e)
+        const message = (e as Error).message
+        throw new Error(`Open-Meteo waypoint lookup failed: ${message}`)
       }
     }
 
